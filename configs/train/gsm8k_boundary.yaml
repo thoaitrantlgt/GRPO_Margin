@@ -1,0 +1,16 @@
+experiment:
+  name: gsm8k_boundary
+  seed: 42
+  output_dir: outputs/gsm8k_boundary
+model: {}
+data:
+  train_path: data/processed/gsm8k/train.parquet
+  validation_path: data/processed/gsm8k/validation.parquet
+rewards: {}
+trainer:
+  max_steps: 500
+  max_completion_length: 256
+margin:
+  enabled: true
+tracking: {}
+

@@ -1,0 +1,8 @@
+name: paper_seed42
+baseline_config: ../train/paper_grpo_seed42.yaml
+method_config: ../train/paper_boundary_seed42.yaml
+evaluation_config: ../eval/paper.yaml
+accelerate_config: configs/accelerate/single_gpu.yaml
+output_dir: outputs/comparisons/paper_seed42
+checkpoint_subdir: final_adapter
+

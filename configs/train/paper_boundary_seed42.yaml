@@ -1,0 +1,16 @@
+experiment:
+  name: paper_boundary_seed42
+  seed: 42
+  output_dir: outputs/paper_boundary_seed42
+model: {}
+data:
+  train_path: data/processed/paper/train.parquet
+  validation_path: data/processed/paper/validation.parquet
+rewards: {}
+trainer:
+  max_steps: 1000
+  max_completion_length: 384
+margin:
+  enabled: true
+tracking: {}
+

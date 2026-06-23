@@ -1,0 +1,8 @@
+name: gsm8k_seed42
+baseline_config: ../train/gsm8k_grpo.yaml
+method_config: ../train/gsm8k_boundary.yaml
+evaluation_config: ../eval/gsm8k.yaml
+accelerate_config: configs/accelerate/single_gpu.yaml
+output_dir: outputs/comparisons/gsm8k_seed42
+checkpoint_subdir: final_adapter
+

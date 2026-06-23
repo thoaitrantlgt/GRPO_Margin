@@ -1,0 +1,25 @@
+profile: gsm8k
+output_dir: data/processed/gsm8k
+seed: 42
+model_tokenizer: Qwen/Qwen2.5-1.5B-Instruct
+model_revision: 989aa7980e4cf806f80c7fef2b1adb7bc71aa306
+max_prompt_tokens: 512
+validation_reserve: 512
+near_duplicate_threshold: 0.95
+near_duplicate_num_perm: 64
+deduplicate_against_eval: true
+materialize_roles: [train, validation, test]
+sources:
+  - name: gsm8k_train
+    dataset: openai/gsm8k
+    revision: 740312add88f781978c0658806c59bc2815b9866
+    config: main
+    split: train
+    role: train
+  - name: gsm8k_test
+    dataset: openai/gsm8k
+    revision: 740312add88f781978c0658806c59bc2815b9866
+    config: main
+    split: test
+    role: test
+

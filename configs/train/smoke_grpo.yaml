@@ -1,0 +1,53 @@
+experiment:
+  name: smoke_grpo
+  seed: 42
+  output_dir: outputs/smoke_grpo
+model: {}
+data:
+  train_path: data/processed/smoke/train.parquet
+  validation_path: data/processed/smoke/validation.parquet
+rewards:
+  weights: [1.0, 0.1]
+  accuracy_reward_index: 0
+  require_single_box: true
+trainer:
+  per_device_train_batch_size: 1
+  gradient_accumulation_steps: 8
+  num_generations: 8
+  max_prompt_length: 512
+  max_completion_length: 128
+  max_steps: 20
+  learning_rate: 5.0e-6
+  lr_scheduler_type: cosine
+  warmup_ratio: 0.03
+  optim: paged_adamw_8bit
+  loss_type: grpo
+  scale_rewards: group
+  beta: 0.0
+  epsilon: 0.2
+  temperature: 0.9
+  top_p: 0.95
+  bf16: true
+  tf32: true
+  gradient_checkpointing: true
+  max_grad_norm: 0.5
+  use_vllm: false
+  logging_steps: 1
+  save_steps: 20
+  eval_strategy: "no"
+  report_to: tensorboard
+  log_completions: true
+  save_total_limit: 2
+margin:
+  enabled: false
+  gate_type: correct_rate
+  gate_floor: 0.25
+  alpha: 0.5
+  boundary_bandwidth: 0.25
+  advantage_clip: 5.0
+  min_valid_rewards: 2
+  accuracy_reward_index: 0
+  use_group_gate: true
+  use_boundary_proximity: true
+tracking: {}
+

@@ -1,0 +1,14 @@
+base_config: ../train/paper_boundary_seed42.yaml
+generated_dir: generated/main
+accelerate_config: configs/accelerate/single_gpu.yaml
+seeds: [13, 42, 2026]
+variants:
+  - name: paper_grpo
+    overrides:
+      margin:
+        enabled: false
+  - name: paper_boundary
+    overrides:
+      margin:
+        enabled: true
+

@@ -1,0 +1,60 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "bm-grpo"
+version = "0.1.0"
+description = "Boundary-Margin reweighting for Hugging Face TRL GRPO"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+dependencies = [
+  "PyYAML>=6.0.2",
+  "torch>=2.2",
+]
+
+[project.optional-dependencies]
+train = [
+  "accelerate>=1.4.0",
+  "bitsandbytes>=0.45.0; platform_system == 'Linux'",
+  "datasets>=4.7.0",
+  "datasketch>=1.6.5",
+  "math-verify>=0.8.0",
+  "pandas>=2.2",
+  "peft>=0.14.0",
+  "pyarrow>=18.0",
+  "tensorboard>=2.18",
+  "transformers>=4.56.2",
+  "trl==1.6.0",
+]
+test = [
+  "pytest>=8.3",
+  "pytest-cov>=6.0",
+  "ruff>=0.9",
+]
+
+[project.scripts]
+bm-grpo-train = "bm_grpo.train:main"
+bm-grpo-eval = "bm_grpo.evaluate:main"
+bm-grpo-experiments = "bm_grpo.experiments:main"
+bm-grpo-compare = "bm_grpo.compare:main"
+bm-grpo-prepare = "bm_grpo.data.prepare:main"
+bm-grpo-audit = "bm_grpo.data.audit:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/bm_grpo"]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = ["tests"]
+markers = [
+  "integration: requires optional training dependencies or model access",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

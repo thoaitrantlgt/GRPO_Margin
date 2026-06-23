@@ -1,0 +1,23 @@
+seed: 42
+output_dir: outputs/evaluation
+model:
+  name_or_path: Qwen/Qwen2.5-1.5B-Instruct
+  revision: 989aa7980e4cf806f80c7fef2b1adb7bc71aa306
+datasets:
+  gsm8k: data/processed/paper/gsm8k_test.parquet
+  math500: data/processed/paper/math500.parquet
+  aime24: data/processed/paper/aime24.parquet
+generation:
+  pass1:
+    temperature: 0.0
+    top_p: 1.0
+    num_return_sequences: 1
+    batch_size: 4
+    max_new_tokens: 384
+  pass4:
+    temperature: 0.7
+    top_p: 0.95
+    num_return_sequences: 4
+    batch_size: 2
+    max_new_tokens: 384
+

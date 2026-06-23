@@ -1,0 +1,8 @@
+name: smoke_seed42
+baseline_config: ../train/smoke_grpo.yaml
+method_config: ../train/smoke_boundary.yaml
+evaluation_config: ../eval/smoke.yaml
+accelerate_config: configs/accelerate/single_gpu.yaml
+output_dir: outputs/comparisons/smoke_seed42
+checkpoint_subdir: final_adapter
+
