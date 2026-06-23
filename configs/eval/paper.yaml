@@ -13,11 +13,10 @@ generation:
     top_p: 1.0
     num_return_sequences: 1
     batch_size: 4
-    max_new_tokens: 384
+    max_new_tokens: 2048
   pass4:
     temperature: 0.7
     top_p: 0.95
     num_return_sequences: 4
     batch_size: 2
-    max_new_tokens: 384
-
+    max_new_tokens: 2048

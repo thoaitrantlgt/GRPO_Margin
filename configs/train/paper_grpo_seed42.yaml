@@ -8,9 +8,8 @@ data:
   validation_path: data/processed/paper/validation.parquet
 rewards: {}
 trainer:
-  max_steps: 1000
-  max_completion_length: 384
+  max_steps: 500
+  max_completion_length: 2048
 margin:
   enabled: false
 tracking: {}
-
