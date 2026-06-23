@@ -160,7 +160,10 @@ def boxed_format_reward(
         valid = len(boxes) == 1 and bool(boxes[0][0])
         if valid:
             suffix = text[boxes[0][2] :].strip()
-            valid = not bool(re.sub(r"[\s.!?,;:]*", "", suffix))
+            # Accept common display-math wrappers after the final box, e.g.
+            # ``\[ \boxed{2} \]`` or ``$$\boxed{2}$$``. Any natural-language
+            # content after the box still invalidates the format reward.
+            valid = bool(re.fullmatch(r"(?:(?:\\\])|(?:\\\))|(?:\$\$?)|[\s.!?,;:])*", suffix))
         scores.append(float(valid))
     if log_extra is not None:
         log_extra("format_valid", scores)

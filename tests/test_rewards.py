@@ -46,3 +46,14 @@ def test_format_reward_rejects_content_after_box() -> None:
         [r"Work. \boxed{42}.", r"\boxed{}", r"\boxed{42} but maybe 43", r"\boxed{1}\boxed{2}"]
     )
     assert scores == [1.0, 0.0, 0.0, 0.0]
+
+
+def test_format_reward_accepts_display_math_wrappers() -> None:
+    completions = [
+        r"\[ \boxed{2} \]",
+        r"$$\boxed{2}$$",
+        r"\(\boxed{2}\)",
+        r"\[\boxed{2}\].",
+    ]
+    assert boxed_format_reward(completions) == [1.0, 1.0, 1.0, 1.0]
+    assert accuracy_reward(completions, ["2"] * 4, ["numeric"] * 4) == [1.0] * 4
