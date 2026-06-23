@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import warnings
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +15,41 @@ from .runtime import write_environment
 from .trainer import BoundaryMarginGRPOTrainer
 
 
+@dataclass(frozen=True, slots=True)
+class RuntimePrecision:
+    model_dtype: torch.dtype
+    bf16: bool
+    fp16: bool
+    tf32: bool
+
+
+def resolve_runtime_precision(config: RunConfig) -> RuntimePrecision:
+    if not torch.cuda.is_available():
+        raise RuntimeError("The Qwen 1.5B QLoRA profile requires a CUDA GPU")
+    capability = torch.cuda.get_device_capability(0)
+    ampere_or_newer = capability[0] >= 8
+    bf16_supported = bool(torch.cuda.is_bf16_supported())
+
+    use_bf16 = config.trainer.bf16 and bf16_supported
+    use_fp16 = config.trainer.fp16 or (config.trainer.bf16 and not bf16_supported)
+    use_tf32 = config.trainer.tf32 and ampere_or_newer
+
+    if config.trainer.bf16 and not bf16_supported:
+        warnings.warn(
+            f"GPU capability {capability} does not support BF16; falling back to FP16.",
+            stacklevel=2,
+        )
+    if config.trainer.tf32 and not ampere_or_newer:
+        warnings.warn(
+            f"GPU capability {capability} does not support TF32; disabling TF32.",
+            stacklevel=2,
+        )
+    if use_bf16 and use_fp16:
+        raise ValueError("bf16 and fp16 cannot both be enabled")
+    model_dtype = torch.bfloat16 if use_bf16 else torch.float16
+    return RuntimePrecision(model_dtype=model_dtype, bf16=use_bf16, fp16=use_fp16, tf32=use_tf32)
+
+
 def _build_training_components(config: RunConfig):
     try:
         from datasets import load_dataset
@@ -22,9 +59,8 @@ def _build_training_components(config: RunConfig):
     except ImportError as error:
         raise RuntimeError("Training requires bm-grpo[train]") from error
 
-    if not torch.cuda.is_available():
-        raise RuntimeError("The Qwen 1.5B QLoRA profile requires a CUDA GPU")
-    dtype = torch.bfloat16 if config.model.dtype == "bfloat16" else torch.float16
+    precision = resolve_runtime_precision(config)
+    dtype = precision.model_dtype
     quantization = BitsAndBytesConfig(
         load_in_4bit=config.model.load_in_4bit,
         bnb_4bit_quant_type=config.model.bnb_4bit_quant_type,
@@ -67,7 +103,7 @@ def _build_training_components(config: RunConfig):
         max_steps=config.trainer.max_steps,
         learning_rate=config.trainer.learning_rate,
         lr_scheduler_type=config.trainer.lr_scheduler_type,
-        warmup_ratio=config.trainer.warmup_ratio,
+        warmup_steps=max(0, round(config.trainer.max_steps * config.trainer.warmup_ratio)),
         optim=config.trainer.optim,
         loss_type=config.trainer.loss_type,
         scale_rewards=config.trainer.scale_rewards,
@@ -75,8 +111,9 @@ def _build_training_components(config: RunConfig):
         epsilon=config.trainer.epsilon,
         temperature=config.trainer.temperature,
         top_p=config.trainer.top_p,
-        bf16=config.trainer.bf16,
-        tf32=config.trainer.tf32,
+        bf16=precision.bf16,
+        fp16=precision.fp16,
+        tf32=precision.tf32,
         gradient_checkpointing=config.trainer.gradient_checkpointing,
         gradient_checkpointing_kwargs={"use_reentrant": False},
         max_grad_norm=config.trainer.max_grad_norm,

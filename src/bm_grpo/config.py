@@ -74,6 +74,7 @@ class TrainerConfig:
     temperature: float = 0.9
     top_p: float = 0.95
     bf16: bool = True
+    fp16: bool = False
     tf32: bool = True
     gradient_checkpointing: bool = True
     max_grad_norm: float = 0.5

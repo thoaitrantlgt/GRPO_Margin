@@ -28,6 +28,7 @@ trainer:
   temperature: 0.9
   top_p: 0.95
   bf16: true
+  fp16: false
   tf32: true
   gradient_checkpointing: true
   max_grad_norm: 0.5
@@ -50,4 +51,3 @@ margin:
   use_group_gate: true
   use_boundary_proximity: true
 tracking: {}
-
