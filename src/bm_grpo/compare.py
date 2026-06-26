@@ -12,6 +12,7 @@ from typing import Any
 import yaml
 
 from .config import RunConfig, load_run_config
+from .train import find_latest_checkpoint
 
 TRAIN_METRICS = (
     "train_loss",
@@ -169,8 +170,37 @@ def _read_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _run_is_complete(output_dir: Path) -> bool:
-    return (output_dir / "train_metrics.json").exists() and (output_dir / "final_adapter").exists()
+def _checkpoint_step(path: Path) -> int:
+    try:
+        return int(path.name.split("-", 1)[1])
+    except (IndexError, ValueError):
+        return -1
+
+
+def _latest_checkpoint(output_dir: Path) -> Path | None:
+    return find_latest_checkpoint(output_dir)
+
+
+def _latest_checkpoint_step(output_dir: Path) -> int | None:
+    latest = _latest_checkpoint(output_dir)
+    if latest is None:
+        return None
+    return _checkpoint_step(latest)
+
+
+def _needs_more_training(output_dir: Path, max_steps: int) -> bool:
+    step = _latest_checkpoint_step(output_dir)
+    return step is None or step < max_steps
+
+
+def _eval_checkpoint(output_dir: Path, fallback_subdir: str) -> Path:
+    final_adapter = output_dir / fallback_subdir
+    if final_adapter.exists():
+        return final_adapter
+    latest = _latest_checkpoint(output_dir)
+    if latest is not None:
+        return latest
+    raise FileNotFoundError(f"No evaluation checkpoint found in {output_dir}")
 
 
 def write_comparison_report(pair: PairConfig, baseline: RunConfig, method: RunConfig) -> dict[str, Any]:
@@ -238,18 +268,28 @@ def run_pair(
     if not report_only:
         for config_path, config in ((pair.baseline_config, baseline), (pair.method_config, method)):
             run_dir = Path(config.experiment.output_dir)
-            marker = run_dir / "train_metrics.json"
+            latest = _latest_checkpoint(run_dir)
+            needs_train = _needs_more_training(run_dir, config.trainer.max_steps)
             command = _train_command(config_path, pair.accelerate_config)
-            if _run_is_complete(run_dir) and not force:
-                print(f"SKIP TRAIN {config.experiment.name}: completed run found in {run_dir}")
+            if not needs_train and not force:
+                print(
+                    f"SKIP TRAIN {config.experiment.name}: latest checkpoint has reached "
+                    f"max_steps={config.trainer.max_steps}"
+                )
             else:
+                if latest is not None:
+                    command.extend(["--resume-from", str(latest)])
+                print(
+                    f"TRAIN {config.experiment.name}: "
+                    + (f"resuming from {latest}" if latest is not None else "starting from scratch")
+                )
                 print(subprocess.list2cmdline(command))
                 if not dry_run:
                     subprocess.run(command, check=True)
 
         for config in (baseline, method):
             run_dir = Path(config.experiment.output_dir)
-            checkpoint = run_dir / pair.checkpoint_subdir
+            checkpoint = _eval_checkpoint(run_dir, pair.checkpoint_subdir)
             eval_dir = run_dir / "eval"
             marker = eval_dir / "metrics.json"
             command = _eval_command(pair.evaluation_config, checkpoint, eval_dir)

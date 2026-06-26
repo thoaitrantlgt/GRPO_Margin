@@ -6,6 +6,8 @@ from bm_grpo.compare import (
     build_comparison,
     comparison_markdown,
     load_pair_config,
+    _eval_checkpoint,
+    _needs_more_training,
     validate_controlled_pair,
 )
 from bm_grpo.config import load_run_config
@@ -36,6 +38,14 @@ def test_controlled_pair_rejects_different_rollout_budget() -> None:
     method.trainer.max_steps += 1
     with pytest.raises(ValueError, match="trainer"):
         validate_controlled_pair(baseline, method)
+
+
+def test_compare_uses_latest_checkpoint_for_resume_and_eval(tmp_path) -> None:
+    (tmp_path / "checkpoint-100").mkdir()
+    (tmp_path / "checkpoint-300").mkdir()
+    assert _needs_more_training(tmp_path, 400) is True
+    assert _needs_more_training(tmp_path, 300) is False
+    assert _eval_checkpoint(tmp_path, "final_adapter").name == "checkpoint-300"
 
 
 def test_comparison_builds_metric_deltas_and_markdown() -> None:
