@@ -47,6 +47,18 @@ def _load_saved_config(path: Path) -> RunConfig | None:
     return load_run_config(path)
 
 
+def _require_existing_path(path_value: str | None, label: str) -> None:
+    if not path_value:
+        return
+    path = Path(path_value)
+    if path.exists():
+        return
+    raise FileNotFoundError(
+        f"Missing {label}: {path}. Run `python -m bm_grpo.data.prepare --config configs/data/gsm8k.yaml` "
+        "or point the train config at an existing processed dataset."
+    )
+
+
 def resolve_resume_checkpoint(config: RunConfig, explicit_resume: str | None = None) -> str | None:
     if explicit_resume:
         return explicit_resume
@@ -127,6 +139,9 @@ def _build_training_components(config: RunConfig):
     tokenizer.padding_side = "left"
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
+
+    _require_existing_path(config.data.train_path, "training dataset")
+    _require_existing_path(config.data.validation_path, "validation dataset")
 
     train_dataset = load_dataset("parquet", data_files=config.data.train_path, split="train")
     peft_config = LoraConfig(
