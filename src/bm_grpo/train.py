@@ -61,18 +61,21 @@ def _require_existing_path(path_value: str | None, label: str) -> None:
 
 def resolve_resume_checkpoint(config: RunConfig, explicit_resume: str | None = None) -> str | None:
     if explicit_resume:
+        print(f"Resuming from explicit checkpoint: {explicit_resume}")
         return explicit_resume
 
     output_dir = Path(config.experiment.output_dir)
     latest = find_latest_checkpoint(output_dir)
     if latest is None:
+        print(f"No checkpoint found in {output_dir}; starting from scratch.")
         return None
 
     saved_config = _load_saved_config(output_dir / "resolved_config.yaml")
     if saved_config is not None and saved_config.to_dict() != config.to_dict():
-        raise ValueError(
-            "Found an existing checkpoint but the saved resolved config differs from the current config. "
-            "Refusing to auto-resume to avoid mixing runs. Use --resume-from explicitly if you really want that."
+        warnings.warn(
+            "Found an existing checkpoint and the saved resolved config differs from the current config. "
+            "Resuming anyway from the latest checkpoint as requested.",
+            stacklevel=2,
         )
     print(f"Auto-resuming from latest checkpoint: {latest}")
     return str(latest)
