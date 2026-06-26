@@ -93,9 +93,12 @@ Resume a paper run:
 ```bash
 accelerate launch --config_file configs/accelerate/single_gpu.yaml \
   -m bm_grpo.train \
-  --config configs/train/paper_boundary_seed42.yaml \
-  --resume-from outputs/paper_boundary_seed42/checkpoint-500
+  --config configs/train/paper_boundary_seed42.yaml
 ```
+
+If `outputs/<name>/resolved_config.yaml` matches the current config, `bm_grpo.train` automatically resumes from the
+latest `checkpoint-*` directory in that output folder. You can still override the checkpoint manually with
+`--resume-from` if you really need to.
 
 Every run stores its resolved config, Python/package/CUDA/GPU environment, adapter checkpoints, completion tables and
 training metrics.
@@ -122,6 +125,9 @@ Completed runs are skipped when `train_metrics.json` exists. Pass `--force` to r
 The paired runner verifies that GRPO and Boundary-Margin use the same model, data, rewards, seed, optimizer, group
 size and rollout budget. It then trains baseline first, trains Boundary-Margin, evaluates both checkpoints and writes
 `comparison.json` plus `comparison.md`.
+
+If either output folder already contains checkpoints and a matching resolved config, each train stage resumes from the
+latest checkpoint automatically before continuing.
 
 Inspect the smoke commands:
 

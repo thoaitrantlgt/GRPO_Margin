@@ -23,6 +23,49 @@ class RuntimePrecision:
     tf32: bool
 
 
+def _checkpoint_step(path: Path) -> int:
+    try:
+        return int(path.name.split("-", 1)[1])
+    except (IndexError, ValueError):
+        return -1
+
+
+def find_latest_checkpoint(output_dir: str | Path) -> Path | None:
+    base = Path(output_dir)
+    if not base.exists():
+        return None
+    checkpoints = [path for path in base.iterdir() if path.is_dir() and path.name.startswith("checkpoint-")]
+    if not checkpoints:
+        return None
+    checkpoints.sort(key=lambda path: (_checkpoint_step(path), path.stat().st_mtime))
+    return checkpoints[-1]
+
+
+def _load_saved_config(path: Path) -> RunConfig | None:
+    if not path.exists():
+        return None
+    return load_run_config(path)
+
+
+def resolve_resume_checkpoint(config: RunConfig, explicit_resume: str | None = None) -> str | None:
+    if explicit_resume:
+        return explicit_resume
+
+    output_dir = Path(config.experiment.output_dir)
+    latest = find_latest_checkpoint(output_dir)
+    if latest is None:
+        return None
+
+    saved_config = _load_saved_config(output_dir / "resolved_config.yaml")
+    if saved_config is not None and saved_config.to_dict() != config.to_dict():
+        raise ValueError(
+            "Found an existing checkpoint but the saved resolved config differs from the current config. "
+            "Refusing to auto-resume to avoid mixing runs. Use --resume-from explicitly if you really want that."
+        )
+    print(f"Auto-resuming from latest checkpoint: {latest}")
+    return str(latest)
+
+
 def resolve_runtime_precision(config: RunConfig) -> RuntimePrecision:
     if not torch.cuda.is_available():
         raise RuntimeError("The Qwen 1.5B QLoRA profile requires a CUDA GPU")
@@ -81,6 +124,7 @@ def _build_training_components(config: RunConfig):
         revision=config.model.revision,
         trust_remote_code=False,
     )
+    tokenizer.padding_side = "left"
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
 
@@ -142,6 +186,7 @@ def _build_training_components(config: RunConfig):
 def run_training(config: RunConfig, resume_from: str | None = None) -> dict[str, Any]:
     output_dir = Path(config.experiment.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    resume_from = resolve_resume_checkpoint(config, resume_from)
     if config.tracking.save_resolved_config:
         dump_run_config(config, output_dir / "resolved_config.yaml")
     if config.tracking.save_environment:

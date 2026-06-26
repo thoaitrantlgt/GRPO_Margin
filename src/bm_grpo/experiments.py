@@ -19,6 +19,10 @@ def _deep_merge(target: dict[str, Any], override: dict[str, Any]) -> dict[str, A
     return target
 
 
+def _run_is_complete(output_dir: Path) -> bool:
+    return (output_dir / "train_metrics.json").exists() and (output_dir / "final_adapter").exists()
+
+
 def build_runs(matrix_path: str | Path, materialize: bool = True) -> list[tuple[str, Path, list[str]]]:
     matrix_path = Path(matrix_path)
     matrix = yaml.safe_load(matrix_path.read_text(encoding="utf-8"))
@@ -59,10 +63,10 @@ def main() -> None:
     parser.add_argument("--force", action="store_true")
     args = parser.parse_args()
     for name, _, command in build_runs(args.matrix):
-        done = Path("outputs") / name / "train_metrics.json"
+        run_dir = Path("outputs") / name
         printable = subprocess.list2cmdline(command)
-        if done.exists() and not args.force:
-            print(f"SKIP {name}: {done} exists")
+        if _run_is_complete(run_dir) and not args.force:
+            print(f"SKIP {name}: completed run found in {run_dir}")
             continue
         print(printable)
         if not args.dry_run:

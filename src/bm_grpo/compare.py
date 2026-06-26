@@ -169,6 +169,10 @@ def _read_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _run_is_complete(output_dir: Path) -> bool:
+    return (output_dir / "train_metrics.json").exists() and (output_dir / "final_adapter").exists()
+
+
 def write_comparison_report(pair: PairConfig, baseline: RunConfig, method: RunConfig) -> dict[str, Any]:
     baseline_dir = Path(baseline.experiment.output_dir)
     method_dir = Path(method.experiment.output_dir)
@@ -233,10 +237,11 @@ def run_pair(
 
     if not report_only:
         for config_path, config in ((pair.baseline_config, baseline), (pair.method_config, method)):
-            marker = Path(config.experiment.output_dir) / "train_metrics.json"
+            run_dir = Path(config.experiment.output_dir)
+            marker = run_dir / "train_metrics.json"
             command = _train_command(config_path, pair.accelerate_config)
-            if marker.exists() and not force:
-                print(f"SKIP TRAIN {config.experiment.name}: {marker} exists")
+            if _run_is_complete(run_dir) and not force:
+                print(f"SKIP TRAIN {config.experiment.name}: completed run found in {run_dir}")
             else:
                 print(subprocess.list2cmdline(command))
                 if not dry_run:

@@ -168,6 +168,7 @@ def prepare(config: PrepareConfig) -> dict[str, Any]:
         revision=config.model_revision,
         trust_remote_code=False,
     )
+    tokenizer.padding_side = "left"
     role_rows: dict[str, list[dict[str, Any]]] = {}
     source_counts: dict[str, dict[str, int]] = {}
     for spec in config.sources:

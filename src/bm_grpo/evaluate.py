@@ -68,6 +68,7 @@ def evaluate(
     tokenizer = AutoTokenizer.from_pretrained(
         model_config["name_or_path"], revision=model_config["revision"]
     )
+    tokenizer.padding_side = "left"
     if tokenizer.pad_token_id is None:
         tokenizer.pad_token = tokenizer.eos_token
 
