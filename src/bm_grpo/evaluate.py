@@ -26,6 +26,19 @@ def _batched(values: list[Any], size: int):
         yield values[index : index + size]
 
 
+def _dataset_items(raw_datasets: dict[str, Any]) -> list[tuple[str, str, int | None]]:
+    items: list[tuple[str, str, int | None]] = []
+    for name, value in raw_datasets.items():
+        if isinstance(value, str):
+            items.append((name, value, None))
+            continue
+        if isinstance(value, dict):
+            items.append((name, str(value["path"]), value.get("limit")))
+            continue
+        raise ValueError(f"Invalid dataset entry for {name}: expected path string or mapping")
+    return items
+
+
 def evaluate(
     config_path: str | Path,
     checkpoint: str | Path,
@@ -47,6 +60,7 @@ def evaluate(
         torch.cuda.manual_seed_all(int(raw["seed"]))
     model_config = raw["model"]
     generation = raw["generation"]
+    global_limit = raw.get("limit")
     output_dir = Path(output_dir_override or raw["output_dir"])
     output_dir.mkdir(parents=True, exist_ok=True)
     dtype = torch.bfloat16
@@ -74,15 +88,26 @@ def evaluate(
 
     all_metrics: dict[str, Any] = {}
     all_completions: list[dict[str, Any]] = []
-    for dataset_name, path in raw["datasets"].items():
+    for dataset_name, path, dataset_limit in _dataset_items(raw["datasets"]):
         dataset = load_dataset("parquet", data_files=path, split="train")
         rows = [dict(row) for row in dataset]
+        limit = dataset_limit if dataset_limit is not None else global_limit
+        if limit is not None:
+            rows = rows[: int(limit)]
         for mode_name, mode in generation.items():
             correctness: list[float] = []
             format_scores: list[float] = []
             parse_scores: list[float] = []
             scores_by_example: dict[str, list[float]] = {}
-            for batch in _batched(rows, int(mode["batch_size"])):
+            batch_size = int(mode["batch_size"])
+            total_batches = (len(rows) + batch_size - 1) // batch_size
+            print(
+                f"EVAL {dataset_name}/{mode_name}: {len(rows)} examples, "
+                f"batch_size={batch_size}, num_return_sequences={mode['num_return_sequences']}"
+            )
+            for batch_index, batch in enumerate(_batched(rows, batch_size), start=1):
+                if batch_index == 1 or batch_index % 10 == 0 or batch_index == total_batches:
+                    print(f"EVAL {dataset_name}/{mode_name}: batch {batch_index}/{total_batches}")
                 prompts = [
                     tokenizer.apply_chat_template(row["prompt"], tokenize=False, add_generation_prompt=True)
                     for row in batch

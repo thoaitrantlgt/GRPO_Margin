@@ -173,6 +173,10 @@ python -m bm_grpo.evaluate \
 Evaluation writes completion-level Parquet and reports greedy pass@1, sampled pass@4, completion accuracy, format rate
 and bootstrap 95% confidence intervals for GSM8K, MATH-500 and AIME24.
 
+For faster evaluation on larger GPUs, increase `generation.*.batch_size` in the eval config. You can add a global
+`limit: 100` or a per-dataset mapping such as `gsm8k: {path: data/processed/paper/gsm8k_test.parquet, limit: 100}` for
+quick checks.
+
 ## Tests
 
 ```bash
