@@ -14,6 +14,11 @@ trainer:
   gradient_accumulation_steps: 8
   max_steps: 500
   max_completion_length: 2048
+  use_vllm: true
+  vllm_mode: colocate
+  vllm_gpu_memory_utilization: 0.55
+  vllm_max_model_length: 3072
+  vllm_enable_sleep_mode: true
 margin:
   enabled: true
 tracking: {}

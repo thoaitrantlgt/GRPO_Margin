@@ -28,7 +28,7 @@ zero-variance groups fall back to plain GRPO.
 - Default model: `Qwen/Qwen2.5-1.5B-Instruct` at pinned revision
   `989aa7980e4cf806f80c7fef2b1adb7bc71aa306`.
 - Default rollout group: `num_generations=8` with `gradient_accumulation_steps=8`.
-- vLLM and distributed training are intentionally disabled in v1.
+- vLLM is optional for Linux GPU training. Distributed training remains out of scope for v1.
 
 ## Installation
 
@@ -39,6 +39,12 @@ cd code_grpo_margin
 python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[train,test]"
+```
+
+For vLLM-accelerated GRPO generation on Linux:
+
+```bash
+pip install -e ".[train,test,vllm]"
 ```
 
 The code pins `trl==1.6.0`. `BoundaryMarginGRPOTrainer` intentionally fails with another TRL version because it uses
@@ -156,10 +162,14 @@ python -m bm_grpo.compare --config configs/compare/paper_seed42.yaml
 Run the Qwen3-4B paper comparison:
 
 ```bash
+pip install -e ".[train,test,vllm]"
 python -m bm_grpo.data.prepare --config configs/data/paper_qwen3_4b.yaml
 python -m bm_grpo.data.audit --manifest data/processed/paper_qwen3_4b/manifest.json
 python -m bm_grpo.compare --config configs/compare/paper_qwen3_4b_seed42.yaml
 ```
+
+The Qwen3-4B train configs enable TRL vLLM colocate mode with `vllm_gpu_memory_utilization: 0.55` and
+`vllm_max_model_length: 3072`. If VRAM is still low, increase utilization gradually; if OOM happens, reduce it.
 
 If training and evaluation already finished, rebuild only the comparison report:
 

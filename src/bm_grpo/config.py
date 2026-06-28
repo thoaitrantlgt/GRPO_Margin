@@ -79,6 +79,17 @@ class TrainerConfig:
     gradient_checkpointing: bool = True
     max_grad_norm: float = 0.5
     use_vllm: bool = False
+    vllm_mode: str = "colocate"
+    vllm_model_impl: str = "vllm"
+    vllm_gpu_memory_utilization: float = 0.45
+    vllm_max_model_length: int | None = None
+    vllm_tensor_parallel_size: int = 1
+    vllm_enable_sleep_mode: bool = True
+    vllm_server_base_url: str | None = None
+    vllm_server_host: str = "0.0.0.0"
+    vllm_server_port: int = 8000
+    vllm_server_timeout: float = 240.0
+    vllm_group_port: int = 51216
     logging_steps: int = 1
     save_steps: int = 100
     eval_strategy: str = "no"
@@ -151,8 +162,20 @@ class RunConfig:
             raise ValueError("v1 requires trainer.loss_type='grpo' for a controlled baseline")
         if self.trainer.scale_rewards != "group":
             raise ValueError("v1 requires trainer.scale_rewards='group'")
-        if self.trainer.use_vllm:
-            raise ValueError("v1 does not support vLLM")
+        if self.trainer.vllm_mode not in {"colocate", "server"}:
+            raise ValueError("trainer.vllm_mode must be 'colocate' or 'server'")
+        if self.trainer.vllm_model_impl not in {"vllm", "transformers"}:
+            raise ValueError("trainer.vllm_model_impl must be 'vllm' or 'transformers'")
+        if not 0 < self.trainer.vllm_gpu_memory_utilization <= 1:
+            raise ValueError("trainer.vllm_gpu_memory_utilization must be in (0, 1]")
+        if self.trainer.vllm_tensor_parallel_size < 1:
+            raise ValueError("trainer.vllm_tensor_parallel_size must be >= 1")
+        if self.trainer.vllm_server_port <= 0:
+            raise ValueError("trainer.vllm_server_port must be > 0")
+        if self.trainer.vllm_group_port <= 0:
+            raise ValueError("trainer.vllm_group_port must be > 0")
+        if self.trainer.vllm_server_timeout <= 0:
+            raise ValueError("trainer.vllm_server_timeout must be > 0")
 
     def to_dict(self) -> dict[str, Any]:
         return dataclasses.asdict(self)

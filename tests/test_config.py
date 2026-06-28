@@ -18,3 +18,11 @@ def test_unknown_config_key_is_rejected(tmp_path: Path) -> None:
     config_path.write_text("trainer:\n  mystery: 1\n", encoding="utf-8")
     with pytest.raises(ValueError, match="Unknown keys"):
         load_run_config(config_path)
+
+
+def test_qwen3_profile_enables_vllm() -> None:
+    config = load_run_config(ROOT / "configs/train/paper_qwen3_4b_boundary_seed42.yaml")
+    assert config.trainer.use_vllm is True
+    assert config.trainer.vllm_mode == "colocate"
+    assert config.trainer.vllm_gpu_memory_utilization == pytest.approx(0.55)
+    assert config.trainer.vllm_max_model_length == 3072

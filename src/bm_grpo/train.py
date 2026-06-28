@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
+import inspect
 import json
 import warnings
 from dataclasses import dataclass
@@ -108,6 +110,22 @@ def resolve_runtime_precision(config: RunConfig) -> RuntimePrecision:
     return RuntimePrecision(model_dtype=model_dtype, bf16=use_bf16, fp16=use_fp16, tf32=use_tf32)
 
 
+def _filter_kwargs(callable_obj, kwargs: dict[str, Any]) -> dict[str, Any]:
+    parameters = inspect.signature(callable_obj).parameters
+    return {key: value for key, value in kwargs.items() if key in parameters}
+
+
+def _require_vllm_if_needed(config: RunConfig) -> None:
+    if not config.trainer.use_vllm or config.trainer.vllm_mode != "colocate":
+        return
+    if importlib.util.find_spec("vllm") is not None:
+        return
+    raise RuntimeError(
+        "trainer.use_vllm=true with vllm_mode='colocate' requires vLLM. "
+        "Install it on the Linux training server with `pip install -e '.[train,test,vllm]'`."
+    )
+
+
 def _build_training_components(config: RunConfig):
     try:
         from datasets import load_dataset
@@ -117,6 +135,7 @@ def _build_training_components(config: RunConfig):
     except ImportError as error:
         raise RuntimeError("Training requires bm-grpo[train]") from error
 
+    _require_vllm_if_needed(config)
     precision = resolve_runtime_precision(config)
     dtype = precision.model_dtype
     quantization = BitsAndBytesConfig(
@@ -154,41 +173,55 @@ def _build_training_components(config: RunConfig):
         target_modules=config.model.lora_target_modules,
         task_type="CAUSAL_LM",
     )
-    args = GRPOConfig(
-        output_dir=config.experiment.output_dir,
-        seed=config.experiment.seed,
-        data_seed=config.experiment.seed,
-        per_device_train_batch_size=config.trainer.per_device_train_batch_size,
-        gradient_accumulation_steps=config.trainer.gradient_accumulation_steps,
-        num_generations=config.trainer.num_generations,
-        max_completion_length=config.trainer.max_completion_length,
-        max_steps=config.trainer.max_steps,
-        learning_rate=config.trainer.learning_rate,
-        lr_scheduler_type=config.trainer.lr_scheduler_type,
-        warmup_steps=max(0, round(config.trainer.max_steps * config.trainer.warmup_ratio)),
-        optim=config.trainer.optim,
-        loss_type=config.trainer.loss_type,
-        scale_rewards=config.trainer.scale_rewards,
-        beta=config.trainer.beta,
-        epsilon=config.trainer.epsilon,
-        temperature=config.trainer.temperature,
-        top_p=config.trainer.top_p,
-        bf16=precision.bf16,
-        fp16=precision.fp16,
-        tf32=precision.tf32,
-        gradient_checkpointing=config.trainer.gradient_checkpointing,
-        gradient_checkpointing_kwargs={"use_reentrant": False},
-        max_grad_norm=config.trainer.max_grad_norm,
-        use_vllm=config.trainer.use_vllm,
-        logging_steps=config.trainer.logging_steps,
-        save_steps=config.trainer.save_steps,
-        eval_strategy=config.trainer.eval_strategy,
-        report_to=config.trainer.report_to,
-        log_completions=config.trainer.log_completions,
-        save_total_limit=config.trainer.save_total_limit,
-        reward_weights=config.rewards.weights,
-        remove_unused_columns=False,
-    )
+    grpo_kwargs = {
+        "output_dir": config.experiment.output_dir,
+        "seed": config.experiment.seed,
+        "data_seed": config.experiment.seed,
+        "per_device_train_batch_size": config.trainer.per_device_train_batch_size,
+        "gradient_accumulation_steps": config.trainer.gradient_accumulation_steps,
+        "num_generations": config.trainer.num_generations,
+        "max_prompt_length": config.trainer.max_prompt_length,
+        "max_completion_length": config.trainer.max_completion_length,
+        "max_steps": config.trainer.max_steps,
+        "learning_rate": config.trainer.learning_rate,
+        "lr_scheduler_type": config.trainer.lr_scheduler_type,
+        "warmup_steps": max(0, round(config.trainer.max_steps * config.trainer.warmup_ratio)),
+        "optim": config.trainer.optim,
+        "loss_type": config.trainer.loss_type,
+        "scale_rewards": config.trainer.scale_rewards,
+        "beta": config.trainer.beta,
+        "epsilon": config.trainer.epsilon,
+        "temperature": config.trainer.temperature,
+        "top_p": config.trainer.top_p,
+        "bf16": precision.bf16,
+        "fp16": precision.fp16,
+        "tf32": precision.tf32,
+        "gradient_checkpointing": config.trainer.gradient_checkpointing,
+        "gradient_checkpointing_kwargs": {"use_reentrant": False},
+        "max_grad_norm": config.trainer.max_grad_norm,
+        "use_vllm": config.trainer.use_vllm,
+        "vllm_mode": config.trainer.vllm_mode,
+        "vllm_model_impl": config.trainer.vllm_model_impl,
+        "vllm_gpu_memory_utilization": config.trainer.vllm_gpu_memory_utilization,
+        "vllm_max_model_len": config.trainer.vllm_max_model_length,
+        "vllm_max_model_length": config.trainer.vllm_max_model_length,
+        "vllm_tensor_parallel_size": config.trainer.vllm_tensor_parallel_size,
+        "vllm_enable_sleep_mode": config.trainer.vllm_enable_sleep_mode,
+        "vllm_server_base_url": config.trainer.vllm_server_base_url,
+        "vllm_server_host": config.trainer.vllm_server_host,
+        "vllm_server_port": config.trainer.vllm_server_port,
+        "vllm_server_timeout": config.trainer.vllm_server_timeout,
+        "vllm_group_port": config.trainer.vllm_group_port,
+        "logging_steps": config.trainer.logging_steps,
+        "save_steps": config.trainer.save_steps,
+        "eval_strategy": config.trainer.eval_strategy,
+        "report_to": config.trainer.report_to,
+        "log_completions": config.trainer.log_completions,
+        "save_total_limit": config.trainer.save_total_limit,
+        "reward_weights": config.rewards.weights,
+        "remove_unused_columns": False,
+    }
+    args = GRPOConfig(**_filter_kwargs(GRPOConfig, grpo_kwargs))
     trainer = BoundaryMarginGRPOTrainer(
         model=model,
         processing_class=tokenizer,
