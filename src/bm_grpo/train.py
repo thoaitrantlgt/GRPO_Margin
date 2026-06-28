@@ -193,6 +193,8 @@ def _build_training_components(config: RunConfig):
         "epsilon": config.trainer.epsilon,
         "temperature": config.trainer.temperature,
         "top_p": config.trainer.top_p,
+        "generation_kwargs": config.trainer.generation_kwargs,
+        "chat_template_kwargs": config.trainer.chat_template_kwargs,
         "bf16": precision.bf16,
         "fp16": precision.fp16,
         "tf32": precision.tf32,

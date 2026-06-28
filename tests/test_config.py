@@ -26,3 +26,4 @@ def test_qwen3_profile_enables_vllm() -> None:
     assert config.trainer.vllm_mode == "colocate"
     assert config.trainer.vllm_gpu_memory_utilization == pytest.approx(0.55)
     assert config.trainer.vllm_max_model_length == 3072
+    assert config.trainer.chat_template_kwargs == {"enable_thinking": False}

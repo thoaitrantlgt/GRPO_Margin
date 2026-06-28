@@ -73,6 +73,8 @@ class TrainerConfig:
     epsilon: float = 0.2
     temperature: float = 0.9
     top_p: float = 0.95
+    generation_kwargs: dict[str, Any] = field(default_factory=dict)
+    chat_template_kwargs: dict[str, Any] = field(default_factory=dict)
     bf16: bool = True
     fp16: bool = False
     tf32: bool = True
