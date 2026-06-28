@@ -1,13 +1,13 @@
 experiment:
-  name: paper_qwen3_4b_boundary_seed42
+  name: paper_qwen3_4b_instruct_2507_boundary_seed42
   seed: 42
-  output_dir: outputs/paper_qwen3_4b_boundary_seed42
+  output_dir: outputs/paper_qwen3_4b_instruct_2507_boundary_seed42
 model:
-  name_or_path: Qwen/Qwen3-4B
-  revision: 1cfa9a7208912126459214e8b04321603b3df60c
+  name_or_path: Qwen/Qwen3-4B-Instruct-2507
+  revision: cdbee75f17c01a7cc42f958dc650907174af0554
 data:
-  train_path: data/processed/paper_qwen3_4b/train.parquet
-  validation_path: data/processed/paper_qwen3_4b/validation.parquet
+  train_path: data/processed/paper_qwen3_4b_instruct_2507/train.parquet
+  validation_path: data/processed/paper_qwen3_4b_instruct_2507/validation.parquet
 rewards: {}
 trainer:
   per_device_train_batch_size: 1

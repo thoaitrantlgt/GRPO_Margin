@@ -22,6 +22,8 @@ def test_unknown_config_key_is_rejected(tmp_path: Path) -> None:
 
 def test_qwen3_profile_enables_vllm() -> None:
     config = load_run_config(ROOT / "configs/train/paper_qwen3_4b_boundary_seed42.yaml")
+    assert config.model.name_or_path == "Qwen/Qwen3-4B-Instruct-2507"
+    assert config.model.revision == "cdbee75f17c01a7cc42f958dc650907174af0554"
     assert config.trainer.use_vllm is True
     assert config.trainer.vllm_mode == "colocate"
     assert config.trainer.vllm_gpu_memory_utilization == pytest.approx(0.55)

@@ -1,8 +1,8 @@
 profile: paper
-output_dir: data/processed/paper_qwen3_4b
+output_dir: data/processed/paper_qwen3_4b_instruct_2507
 seed: 42
-model_tokenizer: Qwen/Qwen3-4B
-model_revision: 1cfa9a7208912126459214e8b04321603b3df60c
+model_tokenizer: Qwen/Qwen3-4B-Instruct-2507
+model_revision: cdbee75f17c01a7cc42f958dc650907174af0554
 max_prompt_tokens: 512
 validation_reserve: 0
 train_limit: 20000

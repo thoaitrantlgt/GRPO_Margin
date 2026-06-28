@@ -1,12 +1,12 @@
 seed: 42
-output_dir: outputs/paper_qwen3_4b_evaluation
+output_dir: outputs/paper_qwen3_4b_instruct_2507_evaluation
 model:
-  name_or_path: Qwen/Qwen3-4B
-  revision: 1cfa9a7208912126459214e8b04321603b3df60c
+  name_or_path: Qwen/Qwen3-4B-Instruct-2507
+  revision: cdbee75f17c01a7cc42f958dc650907174af0554
 datasets:
-  gsm8k: data/processed/paper_qwen3_4b/gsm8k_test.parquet
-  math500: data/processed/paper_qwen3_4b/math500.parquet
-  aime24: data/processed/paper_qwen3_4b/aime24.parquet
+  gsm8k: data/processed/paper_qwen3_4b_instruct_2507/gsm8k_test.parquet
+  math500: data/processed/paper_qwen3_4b_instruct_2507/math500.parquet
+  aime24: data/processed/paper_qwen3_4b_instruct_2507/aime24.parquet
 generation:
   pass1:
     temperature: 0.0

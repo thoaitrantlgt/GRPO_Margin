@@ -115,7 +115,7 @@ Training completions are written under `outputs/<run>/completions/`. To inspect 
 ```bash
 python - <<'PY'
 import pandas as pd
-path = "outputs/paper_qwen3_4b_boundary_seed42/completions/completions_00001.parquet"
+path = "outputs/paper_qwen3_4b_instruct_2507_boundary_seed42/completions/completions_00001.parquet"
 df = pd.read_parquet(path)
 print(df[["completion", "parsed_answer", "format_valid"]].head(4).to_string())
 PY
@@ -171,16 +171,16 @@ Run the paper seed-42 comparison after preparing the paper dataset:
 python -m bm_grpo.compare --config configs/compare/paper_seed42.yaml
 ```
 
-Run the Qwen3-4B paper comparison:
+Run the Qwen3-4B Instruct 2507 paper comparison:
 
 ```bash
 pip install -e ".[train,test,vllm]"
 python -m bm_grpo.data.prepare --config configs/data/paper_qwen3_4b.yaml
-python -m bm_grpo.data.audit --manifest data/processed/paper_qwen3_4b/manifest.json
+python -m bm_grpo.data.audit --manifest data/processed/paper_qwen3_4b_instruct_2507/manifest.json
 python -m bm_grpo.compare --config configs/compare/paper_qwen3_4b_seed42.yaml
 ```
 
-The Qwen3-4B train configs enable TRL vLLM colocate mode with `vllm_gpu_memory_utilization: 0.55` and
+The Qwen3-4B Instruct 2507 train configs enable TRL vLLM colocate mode with `vllm_gpu_memory_utilization: 0.55` and
 `vllm_max_model_length: 3072`. They also pass `chat_template_kwargs: {enable_thinking: false}` so Qwen3 does not
 produce empty thinking-only turns during GRPO rollouts. If VRAM is still low, increase utilization gradually; if OOM
 happens, reduce it.
