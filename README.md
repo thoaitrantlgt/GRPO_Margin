@@ -181,9 +181,9 @@ python -m bm_grpo.compare --config configs/compare/paper_qwen3_4b_seed42.yaml
 ```
 
 The Qwen3-4B Instruct 2507 train configs enable TRL vLLM colocate mode with `vllm_gpu_memory_utilization: 0.55` and
-`vllm_max_model_length: 3072`. They also pass `chat_template_kwargs: {enable_thinking: false}` so Qwen3 does not
-produce empty thinking-only turns during GRPO rollouts. If VRAM is still low, increase utilization gradually; if OOM
-happens, reduce it.
+`vllm_max_model_length: 3072`. They also pass `chat_template_kwargs: {enable_thinking: false}` and use conservative
+sampling (`temperature: 0.7`, `top_p: 0.9`, `top_k: 50`, `min_p: 0.02`, `repetition_penalty: 1.08`) to avoid
+whitespace-only rollouts. If VRAM is still low, increase utilization gradually; if OOM happens, reduce it.
 
 If training and evaluation already finished, rebuild only the comparison report:
 

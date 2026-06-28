@@ -73,6 +73,9 @@ class TrainerConfig:
     epsilon: float = 0.2
     temperature: float = 0.9
     top_p: float = 0.95
+    top_k: int = 0
+    min_p: float | None = None
+    repetition_penalty: float = 1.0
     generation_kwargs: dict[str, Any] = field(default_factory=dict)
     chat_template_kwargs: dict[str, Any] = field(default_factory=dict)
     bf16: bool = True

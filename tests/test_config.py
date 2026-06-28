@@ -29,3 +29,7 @@ def test_qwen3_profile_enables_vllm() -> None:
     assert config.trainer.vllm_gpu_memory_utilization == pytest.approx(0.55)
     assert config.trainer.vllm_max_model_length == 3072
     assert config.trainer.chat_template_kwargs == {"enable_thinking": False}
+    assert config.trainer.temperature == pytest.approx(0.7)
+    assert config.trainer.top_k == 50
+    assert config.trainer.min_p == pytest.approx(0.02)
+    assert config.trainer.repetition_penalty == pytest.approx(1.08)
