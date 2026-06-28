@@ -217,6 +217,8 @@ def _build_training_components(config: RunConfig):
         "eval_strategy": config.trainer.eval_strategy,
         "report_to": config.trainer.report_to,
         "log_completions": config.trainer.log_completions,
+        "num_completions_to_print": config.trainer.num_completions_to_print,
+        "log_unique_prompts": config.trainer.log_unique_prompts,
         "save_total_limit": config.trainer.save_total_limit,
         "reward_weights": config.rewards.weights,
         "remove_unused_columns": False,

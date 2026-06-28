@@ -95,6 +95,8 @@ class TrainerConfig:
     eval_strategy: str = "no"
     report_to: str | list[str] = "tensorboard"
     log_completions: bool = True
+    num_completions_to_print: int | None = 4
+    log_unique_prompts: bool = False
     save_total_limit: int = 2
 
 

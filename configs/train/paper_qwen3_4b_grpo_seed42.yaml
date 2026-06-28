@@ -19,6 +19,8 @@ trainer:
   vllm_gpu_memory_utilization: 0.55
   vllm_max_model_length: 3072
   vllm_enable_sleep_mode: true
+  log_completions: true
+  num_completions_to_print: 4
 margin:
   enabled: false
 tracking: {}

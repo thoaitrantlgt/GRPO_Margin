@@ -110,6 +110,17 @@ latest `checkpoint-*` directory in that output folder. You can still override th
 Every run stores its resolved config, Python/package/CUDA/GPU environment, adapter checkpoints, completion tables and
 training metrics.
 
+Training completions are written under `outputs/<run>/completions/`. To inspect recent parses:
+
+```bash
+python - <<'PY'
+import pandas as pd
+path = "outputs/paper_qwen3_4b_boundary_seed42/completions/completions_00001.parquet"
+df = pd.read_parquet(path)
+print(df[["completion", "parsed_answer", "format_valid"]].head(4).to_string())
+PY
+```
+
 ## Experiment matrix
 
 Inspect the commands without launching jobs:
