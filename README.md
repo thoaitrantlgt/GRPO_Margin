@@ -121,6 +121,12 @@ print(df[["completion", "parsed_answer", "format_valid"]].head(4).to_string())
 PY
 ```
 
+To smoke-test generation outside TRL before a run:
+
+```bash
+python -m bm_grpo.smoke_generate --config configs/train/paper_qwen3_4b_boundary_seed42.yaml
+```
+
 ## Experiment matrix
 
 Inspect the commands without launching jobs:
@@ -174,16 +180,17 @@ python -m bm_grpo.compare --config configs/compare/paper_seed42.yaml
 Run the Qwen3-4B Instruct 2507 paper comparison:
 
 ```bash
-pip install -e ".[train,test,vllm]"
+pip install -e ".[train,test]"
 python -m bm_grpo.data.prepare --config configs/data/paper_qwen3_4b.yaml
 python -m bm_grpo.data.audit --manifest data/processed/paper_qwen3_4b_instruct_2507/manifest.json
 python -m bm_grpo.compare --config configs/compare/paper_qwen3_4b_seed42.yaml
 ```
 
-The Qwen3-4B Instruct 2507 train configs enable TRL vLLM colocate mode with `vllm_gpu_memory_utilization: 0.55` and
-`vllm_max_model_length: 3072`. They also pass `chat_template_kwargs: {enable_thinking: false}` and use conservative
-sampling (`temperature: 0.7`, `top_p: 0.9`, `top_k: 50`, `min_p: 0.02`, `repetition_penalty: 1.08`) to avoid
-whitespace-only rollouts. If VRAM is still low, increase utilization gradually; if OOM happens, reduce it.
+The Qwen3-4B Instruct 2507 train configs use the Transformers generation path by default because the current
+TRL/vLLM rollout path produced whitespace-only completions in smoke tests. They pass
+`chat_template_kwargs: {enable_thinking: false}` and conservative sampling (`temperature: 0.7`, `top_p: 0.9`,
+`top_k: 50`, `min_p: 0.02`, `repetition_penalty: 1.08`). Re-enable vLLM only after a direct vLLM smoke test produces
+non-empty `\boxed{...}` answers.
 
 If training and evaluation already finished, rebuild only the comparison report:
 

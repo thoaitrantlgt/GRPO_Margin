@@ -45,6 +45,7 @@ bm-grpo-experiments = "bm_grpo.experiments:main"
 bm-grpo-compare = "bm_grpo.compare:main"
 bm-grpo-prepare = "bm_grpo.data.prepare:main"
 bm-grpo-audit = "bm_grpo.data.audit:main"
+bm-grpo-smoke-generate = "bm_grpo.smoke_generate:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/bm_grpo"]
