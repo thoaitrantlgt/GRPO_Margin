@@ -12,7 +12,6 @@ from typing import Any
 import yaml
 
 from .config import RunConfig, load_run_config
-from .train import find_latest_checkpoint
 
 TRAIN_METRICS = (
     "train_loss",
@@ -178,7 +177,15 @@ def _checkpoint_step(path: Path) -> int:
 
 
 def _latest_checkpoint(output_dir: Path) -> Path | None:
-    return find_latest_checkpoint(output_dir)
+    if not output_dir.exists():
+        return None
+    checkpoints = [
+        path for path in output_dir.iterdir() if path.is_dir() and path.name.startswith("checkpoint-")
+    ]
+    if not checkpoints:
+        return None
+    checkpoints.sort(key=lambda path: (_checkpoint_step(path), path.stat().st_mtime))
+    return checkpoints[-1]
 
 
 def _latest_checkpoint_step(output_dir: Path) -> int | None:

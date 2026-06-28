@@ -44,6 +44,7 @@ pip install -e ".[train,test]"
 For vLLM-accelerated GRPO generation on Linux:
 
 ```bash
+pip uninstall -y vllm
 pip install -e ".[train,test,vllm]"
 ```
 
