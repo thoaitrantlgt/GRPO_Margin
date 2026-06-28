@@ -26,7 +26,7 @@ def test_smoke_pair_is_controlled_and_uses_group_eight() -> None:
 
 
 def test_all_paired_profiles_are_controlled() -> None:
-    for name in ("smoke", "gsm8k", "paper_seed42"):
+    for name in ("smoke", "gsm8k", "paper_seed42", "paper_qwen3_4b_seed42"):
         pair = load_pair_config(ROOT / f"configs/compare/{name}.yaml")
         validate_controlled_pair(load_run_config(pair.baseline_config), load_run_config(pair.method_config))
 

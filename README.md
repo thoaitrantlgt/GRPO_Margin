@@ -153,6 +153,14 @@ Run the paper seed-42 comparison after preparing the paper dataset:
 python -m bm_grpo.compare --config configs/compare/paper_seed42.yaml
 ```
 
+Run the Qwen3-4B paper comparison:
+
+```bash
+python -m bm_grpo.data.prepare --config configs/data/paper_qwen3_4b.yaml
+python -m bm_grpo.data.audit --manifest data/processed/paper_qwen3_4b/manifest.json
+python -m bm_grpo.compare --config configs/compare/paper_qwen3_4b_seed42.yaml
+```
+
 If training and evaluation already finished, rebuild only the comparison report:
 
 ```bash

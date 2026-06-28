@@ -1,0 +1,40 @@
+profile: paper
+output_dir: data/processed/paper_qwen3_4b
+seed: 42
+model_tokenizer: Qwen/Qwen3-4B
+model_revision: 1cfa9a7208912126459214e8b04321603b3df60c
+max_prompt_tokens: 512
+validation_reserve: 0
+train_limit: 20000
+validation_limit: 1000
+near_duplicate_threshold: 0.95
+near_duplicate_num_perm: 64
+deduplicate_against_eval: true
+materialize_roles: [train, validation, gsm8k_test, math500, aime24]
+sources:
+  - name: deepmath_train
+    dataset: trl-lib/DeepMath-103K
+    revision: 066c50e279dfd0b2f5af79ef622d9fdde6eb4f7e
+    split: train
+    role: train
+  - name: deepmath_validation
+    dataset: trl-lib/DeepMath-103K
+    revision: 066c50e279dfd0b2f5af79ef622d9fdde6eb4f7e
+    split: test
+    role: validation
+  - name: gsm8k_test
+    dataset: openai/gsm8k
+    revision: 740312add88f781978c0658806c59bc2815b9866
+    config: main
+    split: test
+    role: gsm8k_test
+  - name: math500
+    dataset: HuggingFaceH4/MATH-500
+    revision: 6e4ed1e7f7d762db3c21f82c117b7c2f4d8e7d57
+    split: test
+    role: math500
+  - name: aime24
+    dataset: HuggingFaceH4/aime_2024
+    revision: 2fe88a7e6f55c9d62d21a4e565163ca0e7208a1f
+    split: train
+    role: aime24

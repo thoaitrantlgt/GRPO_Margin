@@ -1,0 +1,22 @@
+seed: 42
+output_dir: outputs/paper_qwen3_4b_evaluation
+model:
+  name_or_path: Qwen/Qwen3-4B
+  revision: 1cfa9a7208912126459214e8b04321603b3df60c
+datasets:
+  gsm8k: data/processed/paper_qwen3_4b/gsm8k_test.parquet
+  math500: data/processed/paper_qwen3_4b/math500.parquet
+  aime24: data/processed/paper_qwen3_4b/aime24.parquet
+generation:
+  pass1:
+    temperature: 0.0
+    top_p: 1.0
+    num_return_sequences: 1
+    batch_size: 32
+    max_new_tokens: 2048
+  pass4:
+    temperature: 0.7
+    top_p: 0.95
+    num_return_sequences: 4
+    batch_size: 8
+    max_new_tokens: 2048

@@ -1,0 +1,7 @@
+name: paper_qwen3_4b_seed42
+baseline_config: ../train/paper_qwen3_4b_grpo_seed42.yaml
+method_config: ../train/paper_qwen3_4b_boundary_seed42.yaml
+evaluation_config: ../eval/paper_qwen3_4b.yaml
+accelerate_config: configs/accelerate/single_gpu.yaml
+output_dir: outputs/comparisons/paper_qwen3_4b_seed42
+checkpoint_subdir: final_adapter
