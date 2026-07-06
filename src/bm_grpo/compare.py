@@ -26,6 +26,19 @@ EVAL_METRICS = (
     "format_rate",
     "parse_rate",
 )
+TRAIN_CONFIG_KEYS = (
+    "per_device_train_batch_size",
+    "gradient_accumulation_steps",
+    "max_steps",
+    "max_completion_length",
+    "num_generations",
+    "temperature",
+    "top_p",
+    "top_k",
+    "min_p",
+    "repetition_penalty",
+    "use_vllm",
+)
 
 
 @dataclass(slots=True)
@@ -117,6 +130,11 @@ def build_comparison(
             right = method_eval[benchmark].get(metric)
             if isinstance(left, int | float) and isinstance(right, int | float):
                 benchmark_metrics[metric] = _metric_delta(float(left), float(right))
+        for metadata in ("num_examples", "num_completions", "pass_at_k_ci95"):
+            left = baseline_eval[benchmark].get(metadata)
+            right = method_eval[benchmark].get(metadata)
+            if left is not None or right is not None:
+                benchmark_metrics[metadata] = {"baseline": left, "method": right}
         evaluation[benchmark] = benchmark_metrics
     return {"training": training, "evaluation": evaluation}
 
@@ -125,23 +143,90 @@ def _format_value(value: float | None) -> str:
     return "N/A" if value is None else f"{value:.6f}"
 
 
-def comparison_markdown(name: str, comparison: dict[str, Any]) -> str:
+def _format_metadata(value: Any) -> str:
+    if value is None:
+        return "N/A"
+    if isinstance(value, float):
+        return _format_value(value)
+    if isinstance(value, list | tuple):
+        return "[" + ", ".join(_format_metadata(item) for item in value) + "]"
+    return str(value)
+
+
+def _runtime_notes(
+    baseline: RunConfig,
+    method: RunConfig,
+    baseline_train: dict[str, Any],
+    method_train: dict[str, Any],
+) -> list[str]:
+    notes = [
+        "Training runtime and memory are operational diagnostics, not method-quality claims. "
+        "Use evaluation deltas for model-quality comparison.",
+        "GRPO surrogate loss can be near zero or negative; relative loss percentages are intentionally not reported.",
+    ]
+    baseline_trainer = dataclasses.asdict(baseline.trainer)
+    method_trainer = dataclasses.asdict(method.trainer)
+    mismatched = [
+        key
+        for key in TRAIN_CONFIG_KEYS
+        if baseline_trainer.get(key) != method_trainer.get(key)
+    ]
+    if mismatched:
+        notes.append(
+            "Baseline and Boundary-Margin train configs differ on: "
+            + ", ".join(mismatched)
+            + ". Runtime/memory deltas are not controlled."
+        )
+    left_runtime = baseline_train.get("train_runtime")
+    right_runtime = method_train.get("train_runtime")
+    if isinstance(left_runtime, int | float) and isinstance(right_runtime, int | float):
+        larger = max(float(left_runtime), float(right_runtime))
+        smaller = max(min(float(left_runtime), float(right_runtime)), 1e-9)
+        if larger / smaller >= 1.25:
+            notes.append(
+                "Large runtime gap detected. Check whether both runs used the same batch size, "
+                "resume state, hardware, and generation backend before citing speed."
+            )
+    return notes
+
+
+def comparison_markdown(
+    name: str,
+    comparison: dict[str, Any],
+    *,
+    baseline: RunConfig | None = None,
+    method: RunConfig | None = None,
+    baseline_train: dict[str, Any] | None = None,
+    method_train: dict[str, Any] | None = None,
+) -> str:
+    notes: list[str] = []
+    if baseline is not None and method is not None:
+        notes = _runtime_notes(baseline, method, baseline_train or {}, method_train or {})
     lines = [
         f"# GRPO vs Boundary-Margin: {name}",
         "",
         "Positive evaluation delta means Boundary-Margin is better. Training runtime/memory deltas are raw method "
         "minus baseline.",
         "",
+    ]
+    if notes:
+        lines.extend(["## Read this first", ""])
+        lines.extend(f"- {note}" for note in notes)
+        lines.append("")
+    lines.extend(
+        [
         "## Training",
         "",
         "| Metric | GRPO | Boundary-Margin | Delta | Relative |",
         "|---|---:|---:|---:|---:|",
-    ]
+        ]
+    )
     for metric, values in comparison["training"].items():
         relative = values["relative_percent"]
+        relative_text = "N/A" if metric == "train_loss" or relative is None else f"{relative:.2f}%"
         lines.append(
             f"| {metric} | {_format_value(values['baseline'])} | {_format_value(values['method'])} | "
-            f"{_format_value(values['delta'])} | {'N/A' if relative is None else f'{relative:.2f}%'} |"
+            f"{_format_value(values['delta'])} | {relative_text} |"
         )
     lines.extend(["", "## Evaluation", ""])
     for benchmark, metrics in comparison["evaluation"].items():
@@ -149,11 +234,27 @@ def comparison_markdown(name: str, comparison: dict[str, Any]) -> str:
             [
                 f"### {benchmark}",
                 "",
+                "| Metadata | GRPO | Boundary-Margin |",
+                "|---|---:|---:|",
+            ]
+        )
+        for metadata in ("num_examples", "num_completions", "pass_at_k_ci95"):
+            values = metrics.get(metadata)
+            if isinstance(values, dict):
+                lines.append(
+                    f"| {metadata} | {_format_metadata(values.get('baseline'))} | "
+                    f"{_format_metadata(values.get('method'))} |"
+                )
+        lines.extend(
+            [
+                "",
                 "| Metric | GRPO | Boundary-Margin | Delta | Relative |",
                 "|---|---:|---:|---:|---:|",
             ]
         )
         for metric, values in metrics.items():
+            if metric not in EVAL_METRICS:
+                continue
             relative = values["relative_percent"]
             lines.append(
                 f"| {metric} | {_format_value(values['baseline'])} | {_format_value(values['method'])} | "
@@ -213,9 +314,11 @@ def _eval_checkpoint(output_dir: Path, fallback_subdir: str) -> Path:
 def write_comparison_report(pair: PairConfig, baseline: RunConfig, method: RunConfig) -> dict[str, Any]:
     baseline_dir = Path(baseline.experiment.output_dir)
     method_dir = Path(method.experiment.output_dir)
+    baseline_train = _read_json(baseline_dir / "train_metrics.json")
+    method_train = _read_json(method_dir / "train_metrics.json")
     comparison = build_comparison(
-        _read_json(baseline_dir / "train_metrics.json"),
-        _read_json(method_dir / "train_metrics.json"),
+        baseline_train,
+        method_train,
         _read_json(baseline_dir / "eval" / "metrics.json"),
         _read_json(method_dir / "eval" / "metrics.json"),
     )
@@ -228,9 +331,16 @@ def write_comparison_report(pair: PairConfig, baseline: RunConfig, method: RunCo
     }
     pair.output_dir.mkdir(parents=True, exist_ok=True)
     (pair.output_dir / "comparison.json").write_text(json.dumps(payload, indent=2), encoding="utf-8")
-    (pair.output_dir / "comparison.md").write_text(
-        comparison_markdown(pair.name, comparison), encoding="utf-8"
+    report = comparison_markdown(
+        pair.name,
+        comparison,
+        baseline=baseline,
+        method=method,
+        baseline_train=baseline_train,
+        method_train=method_train,
     )
+    (pair.output_dir / "comparison.md").write_text(report, encoding="utf-8")
+    Path("comparison.md").write_text(report, encoding="utf-8")
     return payload
 
 
