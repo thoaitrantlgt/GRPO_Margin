@@ -206,6 +206,9 @@ If all ablation checkpoints already exist and you only want to run/re-run evalua
 python -m bm_grpo.experiments --matrix configs/experiments/ablations_qwen3_4b.yaml --eval-only
 ```
 
+In eval-only mode, variants without an existing `final_adapter` or `checkpoint-*` are skipped by default. Add
+`--strict-missing-checkpoints` if missing checkpoints should be treated as an error.
+
 The ablation runner writes generated configs under `configs/experiments/generated/ablations_qwen3_4b/`, per-run
 outputs under `outputs/paper_qwen3_4b_*`, and the aggregate report to
 `outputs/ablations/ablations_qwen3_4b/ablation_summary.md` plus a root-level `ablation_summary.md` copy.

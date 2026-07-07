@@ -193,6 +193,11 @@ def main() -> None:
         action="store_true",
         help="Skip all training and only evaluate existing final_adapter or latest checkpoint for each run.",
     )
+    parser.add_argument(
+        "--strict-missing-checkpoints",
+        action="store_true",
+        help="In eval-only mode, fail instead of skipping variants without an existing checkpoint.",
+    )
     args = parser.parse_args()
     matrix_path = Path(args.matrix)
     matrix = yaml.safe_load(matrix_path.read_text(encoding="utf-8"))
@@ -227,7 +232,16 @@ def main() -> None:
             if marker.exists() and not args.force:
                 print(f"SKIP EVAL {name}: {marker} exists")
                 continue
-            checkpoint = run_dir / "final_adapter" if args.dry_run else _final_adapter_or_checkpoint(run_dir)
+            if args.dry_run:
+                checkpoint = run_dir / "final_adapter"
+            else:
+                try:
+                    checkpoint = _final_adapter_or_checkpoint(run_dir)
+                except FileNotFoundError as error:
+                    if args.eval_only and not args.strict_missing_checkpoints:
+                        print(f"SKIP EVAL {name}: {error}")
+                        continue
+                    raise
             command = _eval_command(eval_config, checkpoint, eval_dir)
             print(subprocess.list2cmdline(command))
             if not args.dry_run:
