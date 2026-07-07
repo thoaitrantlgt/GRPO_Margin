@@ -178,26 +178,34 @@ def main() -> None:
     parser.add_argument("--matrix", required=True)
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--force", action="store_true")
+    parser.add_argument(
+        "--eval-only",
+        action="store_true",
+        help="Skip all training and only evaluate existing final_adapter or latest checkpoint for each run.",
+    )
     args = parser.parse_args()
     matrix_path = Path(args.matrix)
     matrix = yaml.safe_load(matrix_path.read_text(encoding="utf-8"))
-    runs = build_runs(matrix_path, materialize=not args.dry_run)
-    for name, config_path, command in runs:
-        run_dir = Path("outputs") / name
-        max_steps = _load_max_steps(config_path) if config_path.exists() else 0
-        printable = subprocess.list2cmdline(command)
-        if _run_is_complete(run_dir, max_steps) and not args.force:
-            print(f"SKIP {name}: completed run found in {run_dir}")
-            continue
-        latest = _latest_checkpoint(run_dir)
-        if latest is not None:
-            command = [*command, "--resume-from", str(latest)]
+    runs = build_runs(matrix_path, materialize=not (args.dry_run or args.eval_only))
+    if args.eval_only:
+        print("EVAL-ONLY: skipping all training commands.")
+    else:
+        for name, config_path, command in runs:
+            run_dir = Path("outputs") / name
+            max_steps = _load_max_steps(config_path) if config_path.exists() else 0
             printable = subprocess.list2cmdline(command)
-        print(printable)
-        if not args.dry_run:
-            completed = subprocess.run(command, check=False)
-            if completed.returncode:
-                sys.exit(completed.returncode)
+            if _run_is_complete(run_dir, max_steps) and not args.force:
+                print(f"SKIP {name}: completed run found in {run_dir}")
+                continue
+            latest = _latest_checkpoint(run_dir)
+            if latest is not None:
+                command = [*command, "--resume-from", str(latest)]
+                printable = subprocess.list2cmdline(command)
+            print(printable)
+            if not args.dry_run:
+                completed = subprocess.run(command, check=False)
+                if completed.returncode:
+                    sys.exit(completed.returncode)
 
     evaluation_config = matrix.get("evaluation_config")
     if evaluation_config:

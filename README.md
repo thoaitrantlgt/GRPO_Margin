@@ -200,6 +200,12 @@ AIME25 and AIME26, and a final summary report:
 python -m bm_grpo.experiments --matrix configs/experiments/ablations_qwen3_4b.yaml
 ```
 
+If all ablation checkpoints already exist and you only want to run/re-run evaluation plus the summary report, use:
+
+```bash
+python -m bm_grpo.experiments --matrix configs/experiments/ablations_qwen3_4b.yaml --eval-only
+```
+
 The ablation runner writes generated configs under `configs/experiments/generated/ablations_qwen3_4b/`, per-run
 outputs under `outputs/paper_qwen3_4b_*`, and the aggregate report to
 `outputs/ablations/ablations_qwen3_4b/ablation_summary.md` plus a root-level `ablation_summary.md` copy.

@@ -1,4 +1,6 @@
 from pathlib import Path
+import subprocess
+import sys
 
 from bm_grpo.experiments import build_runs
 
@@ -32,3 +34,24 @@ def test_qwen3_ablation_matrix_expands_expected_variants() -> None:
         "paper_qwen3_4b_top1_top2_seed42",
         "paper_qwen3_4b_no_advantage_clip_seed42",
     }
+
+
+def test_qwen3_ablation_eval_only_dry_run_skips_training() -> None:
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "bm_grpo.experiments",
+            "--matrix",
+            str(ROOT / "configs/experiments/ablations_qwen3_4b.yaml"),
+            "--eval-only",
+            "--dry-run",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+    )
+    assert "EVAL-ONLY: skipping all training commands." in completed.stdout
+    assert "bm_grpo.train" not in completed.stdout
+    assert "bm_grpo.evaluate" in completed.stdout
