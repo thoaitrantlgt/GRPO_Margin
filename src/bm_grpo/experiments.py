@@ -79,7 +79,8 @@ def build_runs(matrix_path: str | Path, materialize: bool = True) -> list[tuple[
             config = _deep_merge(copy.deepcopy(base), variant.get("overrides", {}))
             config.setdefault("experiment", {})["name"] = name
             config["experiment"]["seed"] = seed
-            config["experiment"]["output_dir"] = f"outputs/{name}"
+            output_dir = str(variant.get("output_dir", f"outputs/{name}"))
+            config["experiment"]["output_dir"] = output_dir.format(name=name, seed=seed)
             config_path = generated_dir / f"{name}.yaml"
             if materialize:
                 config_path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
@@ -96,6 +97,15 @@ def build_runs(matrix_path: str | Path, materialize: bool = True) -> list[tuple[
             ]
             runs.append((name, config_path, command))
     return runs
+
+
+def _run_output_dir(name: str, config_path: Path) -> Path:
+    if config_path.exists():
+        config = yaml.safe_load(config_path.read_text(encoding="utf-8"))
+        output_dir = config.get("experiment", {}).get("output_dir")
+        if output_dir:
+            return Path(output_dir)
+    return Path("outputs") / name
 
 
 def _load_max_steps(config_path: Path) -> int:
@@ -133,8 +143,8 @@ def _format_number(value: Any) -> str:
 
 def write_ablation_summary(runs: list[tuple[str, Path, list[str]]], output_dir: Path) -> None:
     payload: dict[str, Any] = {}
-    for name, _, _ in runs:
-        metrics_path = Path("outputs") / name / "eval" / "metrics.json"
+    for name, config_path, _ in runs:
+        metrics_path = _run_output_dir(name, config_path) / "eval" / "metrics.json"
         if metrics_path.exists():
             payload[name] = _read_json(metrics_path)
     if not payload:
@@ -186,12 +196,12 @@ def main() -> None:
     args = parser.parse_args()
     matrix_path = Path(args.matrix)
     matrix = yaml.safe_load(matrix_path.read_text(encoding="utf-8"))
-    runs = build_runs(matrix_path, materialize=not (args.dry_run or args.eval_only))
+    runs = build_runs(matrix_path, materialize=not args.dry_run)
     if args.eval_only:
         print("EVAL-ONLY: skipping all training commands.")
     else:
         for name, config_path, command in runs:
-            run_dir = Path("outputs") / name
+            run_dir = _run_output_dir(name, config_path)
             max_steps = _load_max_steps(config_path) if config_path.exists() else 0
             printable = subprocess.list2cmdline(command)
             if _run_is_complete(run_dir, max_steps) and not args.force:
@@ -210,8 +220,8 @@ def main() -> None:
     evaluation_config = matrix.get("evaluation_config")
     if evaluation_config:
         eval_config = (matrix_path.parent / evaluation_config).resolve()
-        for name, _, _ in runs:
-            run_dir = Path("outputs") / name
+        for name, config_path, _ in runs:
+            run_dir = _run_output_dir(name, config_path)
             eval_dir = run_dir / "eval"
             marker = eval_dir / "metrics.json"
             if marker.exists() and not args.force:
