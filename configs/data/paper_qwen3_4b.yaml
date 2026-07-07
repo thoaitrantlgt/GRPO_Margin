@@ -10,7 +10,7 @@ validation_limit: 1000
 near_duplicate_threshold: 0.95
 near_duplicate_num_perm: 64
 deduplicate_against_eval: true
-materialize_roles: [train, validation, gsm8k_test, math500, aime24]
+materialize_roles: [train, validation, gsm8k_test, math500, aime24, aime25, aime26]
 sources:
   - name: deepmath_train
     dataset: trl-lib/DeepMath-103K
@@ -38,3 +38,13 @@ sources:
     revision: 2fe88a2f1091d5048c0f36abc874fb997b3dd99a
     split: train
     role: aime24
+  - name: aime25
+    dataset: MathArena/aime_2025
+    revision: main
+    split: train
+    role: aime25
+  - name: aime26
+    dataset: MathArena/aime_2026
+    revision: main
+    split: train
+    role: aime26

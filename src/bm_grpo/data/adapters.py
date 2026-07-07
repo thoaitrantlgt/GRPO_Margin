@@ -9,6 +9,11 @@ SYSTEM_PROMPT = (
     "exactly one final answer in the form \\boxed{...}."
 )
 
+MATHARENA_AIME_SOURCES = {
+    "MathArena/aime_2025": "aime25",
+    "MathArena/aime_2026": "aime26",
+}
+
 
 def _deepmath_problem(prompt: Any) -> str:
     if isinstance(prompt, str):
@@ -43,6 +48,11 @@ def adapt_example(dataset_id: str, example: dict[str, Any]) -> dict[str, Any]:
         solution = str(example["solution"])
         reference_answer = str(example["answer"])
         source = "aime24"
+    elif dataset_id in MATHARENA_AIME_SOURCES:
+        problem = str(example["problem"])
+        solution = str(example.get("solution", ""))
+        reference_answer = str(example["answer"])
+        source = MATHARENA_AIME_SOURCES[dataset_id]
     else:
         raise ValueError(f"No adapter registered for dataset: {dataset_id}")
 

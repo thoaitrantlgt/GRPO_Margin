@@ -7,6 +7,8 @@ datasets:
   gsm8k: data/processed/paper_qwen3_4b_instruct_2507/gsm8k_test.parquet
   math500: data/processed/paper_qwen3_4b_instruct_2507/math500.parquet
   aime24: data/processed/paper_qwen3_4b_instruct_2507/aime24.parquet
+  aime25: data/processed/paper_qwen3_4b_instruct_2507/aime25.parquet
+  aime26: data/processed/paper_qwen3_4b_instruct_2507/aime26.parquet
 generation:
   pass1:
     temperature: 0.0

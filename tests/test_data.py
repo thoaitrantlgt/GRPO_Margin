@@ -20,6 +20,17 @@ def test_gsm8k_adapter_extracts_hash_answer() -> None:
     assert row["prompt"][1]["content"] == "What is 40 + 2?"
 
 
+def test_matharena_aime_adapter_uses_problem_and_answer() -> None:
+    row = adapt_example(
+        "MathArena/aime_2025",
+        {"problem": "Find $2+2$.", "answer": 4, "problem_idx": 1},
+    )
+    assert row["source"] == "aime25"
+    assert row["reference_answer"] == "4"
+    assert row["answer_type"] == "numeric"
+    assert row["solution"] == ""
+
+
 def test_math_and_categorical_types() -> None:
     assert answer_type_for("Yes") == "categorical"
     assert answer_type_for("1,024") == "numeric"

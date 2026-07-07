@@ -1,0 +1,50 @@
+base_config: ../train/paper_qwen3_4b_boundary_seed42.yaml
+generated_dir: generated/ablations_qwen3_4b
+name_prefix: paper_qwen3_4b
+accelerate_config: configs/accelerate/single_gpu.yaml
+evaluation_config: ../eval/paper_qwen3_4b.yaml
+summary_dir: outputs/ablations
+seeds: [42]
+variants:
+  - name: standard_grpo
+    overrides:
+      margin:
+        enabled: false
+  - name: boundary_margin
+    overrides:
+      margin:
+        enabled: true
+        gate_type: correct_rate
+        use_group_gate: true
+        use_boundary_proximity: true
+        advantage_clip: 5.0
+      rewards:
+        weights: [1.0, 0.1]
+  - name: gate_only
+    overrides:
+      margin:
+        enabled: true
+        use_group_gate: true
+        use_boundary_proximity: false
+  - name: boundary_only
+    overrides:
+      margin:
+        enabled: true
+        use_group_gate: false
+        use_boundary_proximity: true
+  - name: no_format_reward
+    overrides:
+      margin:
+        enabled: true
+      rewards:
+        weights: [1.0, 0.0]
+  - name: top1_top2
+    overrides:
+      margin:
+        enabled: true
+        gate_type: top1_top2
+  - name: no_advantage_clip
+    overrides:
+      margin:
+        enabled: true
+        advantage_clip: null

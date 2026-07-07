@@ -186,6 +186,24 @@ python -m bm_grpo.data.audit --manifest data/processed/paper_qwen3_4b_instruct_2
 python -m bm_grpo.compare --config configs/compare/paper_qwen3_4b_seed42.yaml
 ```
 
+The Qwen3 data config also materializes MathArena AIME 2025 and AIME 2026 eval sets:
+
+```text
+data/processed/paper_qwen3_4b_instruct_2507/aime25.parquet
+data/processed/paper_qwen3_4b_instruct_2507/aime26.parquet
+```
+
+To run the Qwen3 ablation matrix for seed 42, including train/resume, evaluation on GSM8K, MATH-500, AIME24,
+AIME25 and AIME26, and a final summary report:
+
+```bash
+python -m bm_grpo.experiments --matrix configs/experiments/ablations_qwen3_4b.yaml
+```
+
+The ablation runner writes generated configs under `configs/experiments/generated/ablations_qwen3_4b/`, per-run
+outputs under `outputs/paper_qwen3_4b_*`, and the aggregate report to
+`outputs/ablations/ablations_qwen3_4b/ablation_summary.md` plus a root-level `ablation_summary.md` copy.
+
 The Qwen3-4B Instruct 2507 train configs use the Transformers generation path by default because the current
 TRL/vLLM rollout path produced whitespace-only completions in smoke tests. They pass
 `chat_template_kwargs: {enable_thinking: false}` and conservative sampling (`temperature: 0.7`, `top_p: 0.9`,
