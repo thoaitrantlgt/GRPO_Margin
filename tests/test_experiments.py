@@ -54,6 +54,29 @@ def test_qwen3_ablation_eval_only_dry_run_skips_training() -> None:
     assert "bm_grpo.evaluate" in completed.stdout
 
 
+def test_qwen3_ablation_dry_run_skips_existing_grpo_and_full_bm() -> None:
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "bm_grpo.experiments",
+            "--matrix",
+            str(ROOT / "configs/experiments/ablations_qwen3_4b.yaml"),
+            "--dry-run",
+        ],
+        check=True,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
+    )
+    assert "SKIP TRAIN paper_qwen3_4b_standard_grpo_seed42: skip_train=true" in completed.stdout
+    assert "SKIP EVAL paper_qwen3_4b_standard_grpo_seed42: skip_eval=true" in completed.stdout
+    assert "SKIP TRAIN paper_qwen3_4b_full_bm_grpo_seed42: skip_train=true" in completed.stdout
+    assert "SKIP EVAL paper_qwen3_4b_full_bm_grpo_seed42: skip_eval=true" in completed.stdout
+    assert "paper_qwen3_4b_gate_only_seed42" in completed.stdout
+    assert "paper_qwen3_4b_midpoint_only_seed42" in completed.stdout
+
+
 def test_eval_only_skips_missing_checkpoints(tmp_path: Path) -> None:
     matrix = tmp_path / "matrix.yaml"
     base = tmp_path / "base.yaml"

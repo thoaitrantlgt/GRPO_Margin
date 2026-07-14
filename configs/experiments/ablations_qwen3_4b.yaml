@@ -8,6 +8,8 @@ seeds: [42]
 variants:
   - name: standard_grpo
     output_dir: outputs/paper_qwen3_4b_instruct_2507_grpo_seed42
+    skip_train: true
+    skip_eval: true
     overrides:
       margin:
         enabled: false
@@ -25,6 +27,8 @@ variants:
         use_boundary_proximity: true
   - name: full_bm_grpo
     output_dir: outputs/paper_qwen3_4b_instruct_2507_boundary_seed42
+    skip_train: true
+    skip_eval: true
     overrides:
       margin:
         enabled: true

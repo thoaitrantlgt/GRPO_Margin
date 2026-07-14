@@ -20,6 +20,20 @@ def _deep_merge(target: dict[str, Any], override: dict[str, Any]) -> dict[str, A
     return target
 
 
+def _run_name(name_prefix: str | None, variant_name: str, seed: int) -> str:
+    name_parts = [part for part in (name_prefix, variant_name, f"seed{seed}") if part]
+    return "_".join(name_parts)
+
+
+def _run_variant_options(matrix: dict[str, Any]) -> dict[str, dict[str, Any]]:
+    name_prefix = matrix.get("name_prefix")
+    options: dict[str, dict[str, Any]] = {}
+    for variant in matrix["variants"]:
+        for seed in matrix["seeds"]:
+            options[_run_name(name_prefix, variant["name"], seed)] = variant
+    return options
+
+
 def _checkpoint_step(path: Path) -> int:
     try:
         return int(path.name.split("-", 1)[1])
@@ -74,8 +88,7 @@ def build_runs(matrix_path: str | Path, materialize: bool = True) -> list[tuple[
     runs: list[tuple[str, Path, list[str]]] = []
     for variant in matrix["variants"]:
         for seed in matrix["seeds"]:
-            name_parts = [part for part in (name_prefix, variant["name"], f"seed{seed}") if part]
-            name = "_".join(name_parts)
+            name = _run_name(name_prefix, variant["name"], seed)
             config = _deep_merge(copy.deepcopy(base), variant.get("overrides", {}))
             config.setdefault("experiment", {})["name"] = name
             config["experiment"]["seed"] = seed
@@ -202,10 +215,14 @@ def main() -> None:
     matrix_path = Path(args.matrix)
     matrix = yaml.safe_load(matrix_path.read_text(encoding="utf-8"))
     runs = build_runs(matrix_path, materialize=not args.dry_run)
+    run_options = _run_variant_options(matrix)
     if args.eval_only:
         print("EVAL-ONLY: skipping all training commands.")
     else:
         for name, config_path, command in runs:
+            if run_options.get(name, {}).get("skip_train", False):
+                print(f"SKIP TRAIN {name}: skip_train=true")
+                continue
             run_dir = _run_output_dir(name, config_path)
             max_steps = _load_max_steps(config_path) if config_path.exists() else 0
             printable = subprocess.list2cmdline(command)
@@ -226,6 +243,9 @@ def main() -> None:
     if evaluation_config:
         eval_config = (matrix_path.parent / evaluation_config).resolve()
         for name, config_path, _ in runs:
+            if run_options.get(name, {}).get("skip_eval", False):
+                print(f"SKIP EVAL {name}: skip_eval=true")
+                continue
             run_dir = _run_output_dir(name, config_path)
             eval_dir = run_dir / "eval"
             marker = eval_dir / "metrics.json"
