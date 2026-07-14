@@ -193,12 +193,24 @@ data/processed/paper_qwen3_4b_instruct_2507/aime25.parquet
 data/processed/paper_qwen3_4b_instruct_2507/aime26.parquet
 ```
 
-To run the Qwen3 ablation matrix for seed 42, including train/resume, evaluation on GSM8K, MATH-500, AIME24,
-AIME25 and AIME26, and a final summary report:
+To run the focused Qwen3 ablation matrix for seed 42, including train/resume, evaluation on GSM8K, MATH-500,
+AIME24, AIME25 and AIME26, and a final summary report:
 
 ```bash
 python -m bm_grpo.experiments --matrix configs/experiments/ablations_qwen3_4b.yaml
 ```
+
+This matrix answers whether the gain comes from the correctness gate or from reward-midpoint proximity:
+
+```text
+standard_grpo
+gate_only
+midpoint_only
+full_bm_grpo
+```
+
+The existing GRPO and Full BM-GRPO checkpoints are reused through explicit `output_dir` mappings; only missing
+Gate-only and Midpoint-only checkpoints need to train.
 
 If all ablation checkpoints already exist and you only want to run/re-run evaluation plus the summary report, use:
 

@@ -11,7 +11,19 @@ variants:
     overrides:
       margin:
         enabled: false
-  - name: boundary_margin
+  - name: gate_only
+    overrides:
+      margin:
+        enabled: true
+        use_group_gate: true
+        use_boundary_proximity: false
+  - name: midpoint_only
+    overrides:
+      margin:
+        enabled: true
+        use_group_gate: false
+        use_boundary_proximity: true
+  - name: full_bm_grpo
     output_dir: outputs/paper_qwen3_4b_instruct_2507_boundary_seed42
     overrides:
       margin:
@@ -22,31 +34,3 @@ variants:
         advantage_clip: 5.0
       rewards:
         weights: [1.0, 0.1]
-  - name: gate_only
-    overrides:
-      margin:
-        enabled: true
-        use_group_gate: true
-        use_boundary_proximity: false
-  - name: boundary_only
-    overrides:
-      margin:
-        enabled: true
-        use_group_gate: false
-        use_boundary_proximity: true
-  - name: no_format_reward
-    overrides:
-      margin:
-        enabled: true
-      rewards:
-        weights: [1.0, 0.0]
-  - name: top1_top2
-    overrides:
-      margin:
-        enabled: true
-        gate_type: top1_top2
-  - name: no_advantage_clip
-    overrides:
-      margin:
-        enabled: true
-        advantage_clip: null

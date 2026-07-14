@@ -24,15 +24,12 @@ def test_main_matrix_expands_two_variants_and_three_seeds(tmp_path: Path) -> Non
 def test_qwen3_ablation_matrix_expands_expected_variants() -> None:
     matrix = ROOT / "configs/experiments/ablations_qwen3_4b.yaml"
     runs = build_runs(matrix, materialize=False)
-    assert len(runs) == 7
+    assert len(runs) == 4
     assert {name for name, _, _ in runs} == {
         "paper_qwen3_4b_standard_grpo_seed42",
-        "paper_qwen3_4b_boundary_margin_seed42",
         "paper_qwen3_4b_gate_only_seed42",
-        "paper_qwen3_4b_boundary_only_seed42",
-        "paper_qwen3_4b_no_format_reward_seed42",
-        "paper_qwen3_4b_top1_top2_seed42",
-        "paper_qwen3_4b_no_advantage_clip_seed42",
+        "paper_qwen3_4b_midpoint_only_seed42",
+        "paper_qwen3_4b_full_bm_grpo_seed42",
     }
 
 
