@@ -41,8 +41,9 @@ def _dataset_items(raw_datasets: dict[str, Any]) -> list[tuple[str, str, int | N
 
 def evaluate(
     config_path: str | Path,
-    checkpoint: str | Path,
+    checkpoint: str | Path | None = None,
     output_dir_override: str | Path | None = None,
+    base_only: bool = False,
 ) -> dict[str, Any]:
     try:
         import pyarrow as pa
@@ -77,7 +78,12 @@ def evaluate(
         torch_dtype=dtype,
         device_map={"": 0},
     )
-    model = PeftModel.from_pretrained(base, str(checkpoint))
+    if base_only:
+        model = base
+    else:
+        if checkpoint is None:
+            raise ValueError("checkpoint is required unless base_only=True")
+        model = PeftModel.from_pretrained(base, str(checkpoint))
     model.eval()
     tokenizer = AutoTokenizer.from_pretrained(
         model_config["name_or_path"], revision=model_config["revision"]
@@ -153,6 +159,7 @@ def evaluate(
             pass_scores = [float(any(score > 0 for score in scores)) for scores in scores_by_example.values()]
             low, high = _bootstrap_interval(pass_scores, int(raw["seed"]))
             all_metrics[f"{dataset_name}/{mode_name}"] = {
+                "model_source": "base" if base_only else "adapter",
                 "pass_at_k": mean(pass_scores) if pass_scores else 0.0,
                 "completion_accuracy": mean(correctness) if correctness else 0.0,
                 "format_rate": mean(format_scores) if format_scores else 0.0,
@@ -169,10 +176,15 @@ def evaluate(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate a Boundary-Margin GRPO adapter")
     parser.add_argument("--config", required=True)
-    parser.add_argument("--checkpoint", required=True)
+    parser.add_argument("--checkpoint")
+    parser.add_argument("--base-only", action="store_true", help="Evaluate the base model without loading a PEFT adapter")
     parser.add_argument("--output-dir")
     args = parser.parse_args()
-    print(json.dumps(evaluate(args.config, args.checkpoint, args.output_dir), indent=2))
+    if args.base_only and args.checkpoint:
+        parser.error("--checkpoint must not be provided with --base-only")
+    if not args.base_only and not args.checkpoint:
+        parser.error("--checkpoint is required unless --base-only is set")
+    print(json.dumps(evaluate(args.config, args.checkpoint, args.output_dir, args.base_only), indent=2))
 
 
 if __name__ == "__main__":

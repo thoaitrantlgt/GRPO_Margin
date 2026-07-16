@@ -1,4 +1,4 @@
-# Boundary-Margin GRPO
+# Adaptive Midpoint GRPO
 
 Reference implementation of Boundary-Margin reweighting on top of Hugging Face TRL `GRPOTrainer`.
 
@@ -209,7 +209,7 @@ midpoint_only
 full_bm_grpo
 ```
 
-The existing GRPO and Full BM-GRPO checkpoints are mapped into the matrix but marked `skip_train: true` and
+The existing GRPO and Full AM-GRPO checkpoints are mapped into the matrix but marked `skip_train: true` and
 `skip_eval: true`, so the command above only runs Gate-only and Midpoint-only. If their old metrics exist, they are
 still included in the generated summary table.
 
@@ -247,6 +247,15 @@ better; runtime and memory deltas are reported as raw method minus baseline.
 python -m bm_grpo.evaluate \
   --config configs/eval/paper.yaml \
   --checkpoint outputs/paper_boundary_seed42/final_adapter
+```
+
+Evaluate the untrained/base Qwen model without loading any LoRA adapter:
+
+```bash
+python -m bm_grpo.evaluate \
+  --config configs/eval/paper_qwen3_4b.yaml \
+  --base-only \
+  --output-dir outputs/qwen3_4b_base_eval
 ```
 
 Evaluation writes completion-level Parquet and reports greedy pass@1, sampled pass@4, completion accuracy, format rate
